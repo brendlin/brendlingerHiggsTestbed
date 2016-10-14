@@ -1,6 +1,6 @@
 #!/bin/usr/env python
 
-import ROOT # asdf
+import ROOT
 import os,sys
 
 #-------------------------------------------------------------------------
