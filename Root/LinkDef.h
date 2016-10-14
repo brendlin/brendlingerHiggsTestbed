@@ -1,4 +1,4 @@
-#include <HGamTutorialPackage/TutorialAnalysis.h>
+#include <brendlingerHiggsTestbed/TutorialAnalysis.h>
 
 #ifdef __CINT__
 

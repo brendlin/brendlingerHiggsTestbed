@@ -1,5 +1,5 @@
-#ifndef HGamTutorialPackage_TutorialAnalysis_H
-#define HGamTutorialPackage_TutorialAnalysis_H
+#ifndef brendlingerHiggsTestbed_TutorialAnalysis_H
+#define brendlingerHiggsTestbed_TutorialAnalysis_H
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
 
@@ -36,4 +36,4 @@ public:
   ClassDef(TutorialAnalysis, 1);
 };
 
-#endif // HGamTutorialPackage_TutorialAnalysis_H
+#endif // brendlingerHiggsTestbed_TutorialAnalysis_H

@@ -39,6 +39,7 @@ def getOutputName(outname,put_in_run_directory=True,preserve_dir=False) :
             ClearDir('%s/%s'%(dirName,'hist'       ))
             ClearDir('%s/%s'%(dirName,'input'      ))
             ClearDir('%s/%s/%s'%(dirName,'fetch','data-SKIM'))
+            ClearDir('%s/%s/%s'%(dirName,'fetch','data-MxAOD'))
             ClearDir('%s/%s'%(dirName,'fetch'      ))
             ClearDir('%s/%s'%(dirName,'run'        ))
             ClearDir('%s/%s'%(dirName,'submit'     ))
@@ -84,12 +85,15 @@ def main (options,args) :
     myhandler.add(sample)
 
     myhandler.setMetaString("nc_tree","CollectionTree") # must be done AFTER scanDir
+    ROOT.SH.scanNEvents(myhandler)
     myjob.sampleHandler(myhandler)
+    myhandler.setMetaDouble(ROOT.EL.Job.optEventsPerWorker,options.max)
 
-    #driver = ROOT.EL.CondorDriver() if options.condor else ROOT.EL.DirectDriver()
-    # GEDriver driver
-    driver = ROOT.EL.ProofDriver(); driver.numWorkers = 4;
-    #driver = ROOT.EL.DirectDriver()
+    if options.sge :
+        driver = ROOT.EL.GEDriver();
+        myjob.options().setString(ROOT.EL.Job.optSubmitFlags, '-q default.q,short.q,long.q  -l os=sld6 -l site=hh -l h_vmem=4G')
+    else :
+        driver = ROOT.EL.DirectDriver()
     
     print 'submitting'
     driver.submit(myjob,outputname)
@@ -124,6 +128,7 @@ if __name__ == "__main__":
     p.add_option('--submit',action='store_true',default=False  ,dest='submit',help='Submit to grid (d3pd)' )
     p.add_option('--ntuple',action='store_true',default=False  ,dest='ntuple',help='write an ntuple' )
     p.add_option('--condor',action='store_true',default=False  ,dest='condor',help='use condor' )
+    p.add_option('--sge',action='store_true',default=False  ,dest='sge',help='use SGE driver' )
     p.add_option('--gridsamples',type ='string',default='GridSamples.txt',dest='gridsamples',help='Grid samples text file' )
     p.add_option('--tag',type  ='string'    ,default='dc14_ew01'   ,dest='tag',help='dataset tag' )
     p.add_option('--truth'  ,action='store_true',default=False  ,dest='truth',help='truth level analysis on truth DAODs' )
