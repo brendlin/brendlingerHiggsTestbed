@@ -69,6 +69,10 @@ def main (options,args) :
 
     myjob = ROOT.EL.Job()
     myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
+    if not options.alg :
+        print 'Error! You must specify an algorithm!'
+        import sys
+        sys.exit()
     exec ('alg = ROOT.%s("%s")'%(options.alg,options.alg))
     conf = ROOT.HG.Config()
     conf.addFile(options.config)
@@ -96,14 +100,29 @@ def main (options,args) :
     # files from argv command line
     # (could also do scanDir or whatever)
 
-    fileName = options.input # '/Users/brendlin/Temporary/data16_13TeV.DS1_2496ipb.physics_Main.MxAOD.p2667.h013a.root'
     myhandler = ROOT.SH.SampleHandler()
-    sample = ROOT.SH.SampleLocal('data')
-    sample.add(fileName)
-    myhandler.add(sample)
 
-    myhandler.setMetaString("nc_tree","CollectionTree") # must be done AFTER scanDir
+    # local file
+    if '.root' in options.input :
+        fileName = options.input
+        sample = ROOT.SH.SampleLocal(options.input.split('/')[-1].replace('.root',''))
+        sample.add(fileName)
+        myhandler.add(sample)
+    
+    # Dataset stored on DESY-HH_LOCALGROUPDISK
+    else :
+        ROOT.SH.scanRucio(myhandler,options.input)
+
+        # srm://srm.ndgf.org
+        # root://ftp1.ndgf.org
+        # srm://dcache-se-atlas.desy.de/pnfs/desy.de/atlas/dq2
+        disk = 'DESY-HH_LOCALGROUPDISK'
+        ROOT.SH.makeGridDirect(myhandler,disk,'srm://dcache-se-atlas.desy.de','',False) 
+        # last argument is for partial datasets
+
     ROOT.SH.scanNEvents(myhandler)
+    myhandler.printContent()
+    myhandler.setMetaString('nc_tree','CollectionTree') # must be done AFTER scanDir
     myjob.sampleHandler(myhandler)
     myhandler.setMetaDouble(ROOT.EL.Job.optEventsPerWorker,options.max)
 
@@ -113,9 +132,7 @@ def main (options,args) :
     else :
         driver = ROOT.EL.DirectDriver()
     
-    print 'submitting'
     driver.submit(myjob,outputname)
-    print 'submitted'
 
     return 0
 
