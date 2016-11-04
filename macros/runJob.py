@@ -68,10 +68,11 @@ def main (options,args) :
     LoadRootCore()
 
     myjob = ROOT.EL.Job()
-    myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
+    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
+    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_class)
+    myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)
     if not options.alg :
         print 'Error! You must specify an algorithm!'
-        import sys
         sys.exit()
     exec ('alg = ROOT.%s("%s")'%(options.alg,options.alg))
     conf = ROOT.HG.Config()
@@ -86,7 +87,7 @@ def main (options,args) :
     # Fill unspecified values from default config, specified here.
     if not conf.isDefined("BaseConfig") :
         print 'You must specify a base configuration file, option: BaseConfig. Exiting.'
-        import sys; sys.exit()
+        sys.exit()
     conf.addFile(ROOT.PathResolverFindCalibFile(conf.getStr("BaseConfig").Data()))
 
     conf.setValue('OutputDir',outputname)
@@ -111,6 +112,10 @@ def main (options,args) :
     
     # Dataset stored on DESY-HH_LOCALGROUPDISK
     else :
+        if not os.getenv('ATLAS_LOCAL_DQ2CLIENT_PATH') :
+            print 'Error! Please execute localSetupDQ2Client and voms-proxy-init!'
+            sys.exit()
+            
         ROOT.SH.scanRucio(myhandler,options.input)
 
         # srm://srm.ndgf.org
