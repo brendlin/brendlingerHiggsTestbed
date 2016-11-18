@@ -1,4 +1,5 @@
-#include <brendlingerHiggsTestbed/TutorialAnalysis.h>
+#include "brendlingerHiggsTestbed/SkimAndSlimAndAdd.h"
+#include "brendlingerHiggsTestbed/TutorialAnalysis.h"
 
 #ifdef __CINT__
 
@@ -10,5 +11,6 @@
 #endif
 
 #ifdef __CINT__
+#pragma link C++ class SkimAndSlimAndAdd+;
 #pragma link C++ class TutorialAnalysis+;
 #endif

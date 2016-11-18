@@ -64,13 +64,13 @@ def LoadRootCore() :
 #-------------------------------------------------------------------------
 def main (options,args) :
     
-    outputname = getOutputName(options.out)
+    outputname = getOutputName(options.out,put_in_run_directory=False)
     LoadRootCore()
 
     myjob = ROOT.EL.Job()
-    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
+    myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
     #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_class)
-    myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)
+    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)
     if not options.alg :
         print 'Error! You must specify an algorithm!'
         sys.exit()
