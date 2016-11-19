@@ -25,6 +25,7 @@ public:
 
  public:
   static SG::AuxElement::Decorator<float> randomvarc;
+
   static SG::AuxElement::Accessor<float> randomvarc_acc;
 
   // this is needed to distribute the algorithm to the workers
