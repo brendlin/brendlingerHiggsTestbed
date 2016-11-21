@@ -2,13 +2,16 @@
 #define brendlingerHiggsTestbed_SkimAndSlimAndAdd_H
 
 #include "HGamAnalysisFramework/HgammaAnalysis.h"
+#include "brendlingerHiggsTestbed/Plots.h"
+#include "brendlingerHiggsTestbed/Sample.h"
+#include "brendlingerHiggsTestbed/Variables.h"
 
 class SkimAndSlimAndAdd : public HgammaAnalysis
 {
 public:
 
 private:
-  xAOD::TEvent *m_outEvent; //!
+  KTB::Sample m_currentsample; //!
 
 public:
 
@@ -17,16 +20,15 @@ public:
   virtual ~SkimAndSlimAndAdd();
 
   // these are the functions inherited from HgammaAnalysis
-  //virtual EL::StatusCode initialize();
+  virtual EL::StatusCode initialize();
   virtual EL::StatusCode createOutput();
   virtual EL::StatusCode execute();
-/*   virtual EL::StatusCode finalize(); */
-/*   virtual EL::StatusCode fileExecute(); */
+  virtual EL::StatusCode finalize();
+  virtual EL::StatusCode fileExecute();
 
  public:
-  static SG::AuxElement::Decorator<float> randomvarc;
 
-  static SG::AuxElement::Accessor<float> randomvarc_acc;
+  KTB::Plots* m_plots; //!
 
   // this is needed to distribute the algorithm to the workers
   ClassDef(SkimAndSlimAndAdd, 1);
