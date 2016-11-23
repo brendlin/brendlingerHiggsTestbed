@@ -10,19 +10,20 @@
 const std::vector<KTB::sample_props> KTB::GetSampleProperties(){
   static std::vector<sample_props> s_props;
   if (s_props.empty()){
-    //                             ENUM       code-readable human-readable powheg sherpa madgraph
-    s_props.push_back(sample_props(knone      ,"none"      ,"None"       ,      0,      0,      0));
-    s_props.push_back(sample_props(kdata      ,"data"      ,"Data"       ,      0,      0,      0));
-    s_props.push_back(sample_props(kunlabeled ,"unlabeled" ,"Unlabeled"  ,      0,      0,      0));
-    s_props.push_back(sample_props(kggh       ,"ggh"       ,"ggh"        , 341000,      0,      0));
-    s_props.push_back(sample_props(ktth       ,"tth"       ,"tth"        ,      0,      0,      0));
-    s_props.push_back(sample_props(ktwh       ,"twh"       ,"twh"        ,      0,      0,      0));
-    s_props.push_back(sample_props(kbbh       ,"bbh"       ,"bbh"        ,      0,      0,      0));
-    s_props.push_back(sample_props(kthjb      ,"thjb"      ,"thjb"       ,      0,      0,      0));
-    s_props.push_back(sample_props(kttgamma   ,"ttgamma"   ,"ttgamma"    ,      0,      0,      0));
-    s_props.push_back(sample_props(kvbfh      ,"vbfh"      ,"vbfh"       ,      0,      0,      0));
-    s_props.push_back(sample_props(kwh        ,"wh"        ,"zh"         ,      0,      0,      0));
-    s_props.push_back(sample_props(kzh        ,"zh"        ,"zh"         ,      0,      0,      0));
+    //                             ENUM       code-readable human-readable powheg sherpa madgraph mcatnlo
+    s_props.push_back(sample_props(knone      ,"none"      ,"None"       ));
+    s_props.push_back(sample_props(kdata      ,"data"      ,"Data"       ));
+    s_props.push_back(sample_props(kunlabeled ,"unlabeled" ,"Unlabeled"  ));
+    s_props.push_back(sample_props(kggh       ,"ggh"       ,"ggh"        )); s_props.back().addDS(341000,"powheg");
+    s_props.push_back(sample_props(ktth       ,"tth"       ,"tth"        )); s_props.back().addDS(341069,"powheg"); s_props.back().addDS(341081,"mcatnlo");
+    s_props.push_back(sample_props(ktwh       ,"twh"       ,"twh"        )); s_props.back().addDS(341997,"mcatnlo"); s_props.back().addDS(341998,"mcatnlo"); s_props.back().addDS(341999,"mcatnlo");
+    s_props.push_back(sample_props(kbbh       ,"bbh"       ,"bbh"        )); s_props.back().addDS(342097,"mcatnlo"); s_props.back().addDS(342098,"mcatnlo");
+    s_props.push_back(sample_props(kthjb      ,"thjb"      ,"thjb"       )); s_props.back().addDS(341988,"madgraph"); s_props.back().addDS(341989,"madgraph"); s_props.back().addDS(341990,"madgraph");
+                                                                             s_props.back().addDS(343266,"madgraph"); s_props.back().addDS(343267,"madgraph"); s_props.back().addDS(343268,"madgraph");
+    s_props.push_back(sample_props(kttgamma   ,"ttgamma"   ,"ttgamma"    )); s_props.back().addDS(410087,"madgraph"); s_props.back().addDS(410082,"madgraph"); //
+    s_props.push_back(sample_props(kvbfh      ,"vbfh"      ,"vbfh"       )); s_props.back().addDS(341001,"powheg");
+    s_props.push_back(sample_props(kwh        ,"wh"        ,"zh"         )); s_props.back().addDS(341067,"pythia");
+    s_props.push_back(sample_props(kzh        ,"zh"        ,"zh"         )); s_props.back().addDS(341068,"pythia");
     s_props.push_back(sample_props(kEndOfNonOverlapping,"error","Error"  ));
     s_props.push_back(sample_props(kall       ,"all"       ,"All"        ));
     s_props.push_back(sample_props(khiggs     ,"higgs"     ,"Higgs"      ));
@@ -47,9 +48,9 @@ KTB::Sample KTB::ConvertToSample(int mc_channel_number){
   // do not do this during a loop
   static std::vector<sample_props> props = GetSampleProperties();
   for (unsigned int i=0;i<props.size();++i){
-    if (mc_channel_number == props[i].powheg_runnumber  ) return props[i].first;
-    if (mc_channel_number == props[i].sherpa_runnumber  ) return props[i].first;
-    if (mc_channel_number == props[i].madgraph_runnumber) return props[i].first;
+    for (unsigned int j=0;j<props[i].ds_props.size();++j){
+      if (mc_channel_number == props[i].ds_props[j].runnumber) return props[i].first;
+    }
   }
   MSG_INFO("Error! Sample.cxx Cannot find sample enum for " << mc_channel_number);
   exit(1);
@@ -114,6 +115,7 @@ std::vector<KTB::Sample> KTB::ConvertSampleToSampleVec(Sample s){
   if (s == kall) {
     std::vector<KTB::Sample> vec;
     for (unsigned int i=0;i<kEndOfNonOverlapping;i++){
+      if (i == kunlabeled) continue;
       if (i == knone) continue;
       if (i == kdata) continue;
       vec.push_back(static_cast<KTB::Sample>(i));

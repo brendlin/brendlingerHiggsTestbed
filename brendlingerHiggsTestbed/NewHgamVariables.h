@@ -14,6 +14,7 @@ namespace HG {
 
     float calculateValue(bool truth)
     {
+       (void)truth;
       return m_default;
     }
   };

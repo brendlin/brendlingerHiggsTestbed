@@ -2,7 +2,6 @@
 #include "HGamAnalysisFramework/HgammaIncludes.h"
 #include "HGamAnalysisFramework/HGamVariables.h"
 #include "brendlingerHiggsTestbed/NewHgamVariables.h"
-#include "brendlingerHiggsTestbed/Utils.h"
 #include <EventLoop/Worker.h>
 
 // this is needed to distribute the algorithm to the workers

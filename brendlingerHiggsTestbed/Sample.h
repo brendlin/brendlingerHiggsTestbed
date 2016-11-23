@@ -39,6 +39,11 @@ namespace KTB
     kall,
     khiggs,
   };
+
+  struct dataset_props{
+    int runnumber;
+    std::string generator;
+  };
   
   class sample_props{
   public:
@@ -46,28 +51,20 @@ namespace KTB
     std::string second; // name
     std::string human_readable; // human-readable name
     std::string tex_label;
-    int powheg_runnumber;
-    int sherpa_runnumber;
-    int madgraph_runnumber;
+    std::vector<dataset_props> ds_props;
+
+    void addDS(int rn,std::string gen){
+      dataset_props ds;
+      ds.runnumber = rn;
+      ds.generator = gen;
+      ds_props.push_back(ds);
+    }
 
     sample_props(){};
     sample_props(Sample s,std::string nm,std::string hum_read){
       first = s;
       second = nm;
       human_readable = hum_read;
-      powheg_runnumber = 0;
-      sherpa_runnumber = 0;
-      madgraph_runnumber = 0;
-      //tex_label = lab;
-    };
-
-    sample_props(Sample s,std::string nm,std::string hum_read,int powheg,int sherpa, int madgraph){
-      first = s;
-      second = nm;
-      human_readable = hum_read;
-      powheg_runnumber = powheg;
-      sherpa_runnumber = sherpa;
-      madgraph_runnumber = madgraph;
       //tex_label = lab;
     };
   };
