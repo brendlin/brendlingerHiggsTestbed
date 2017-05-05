@@ -2,6 +2,7 @@
 
 import ROOT
 import os,sys
+import math
 
 #-------------------------------------------------------------------------
 def getOutputName(outname,put_in_run_directory=True,preserve_dir=False) :
@@ -52,7 +53,12 @@ def getOutputName(outname,put_in_run_directory=True,preserve_dir=False) :
 
     return dirName
 
+#-------------------------------------------------------------------------
 def LoadRootCore() :
+    import os
+    if 'CMAKE_PREFIX_PATH' in os.environ :
+        return
+
     import ROOT
     if 'RootCore' not in ROOT.gSystem.GetLibraries() :
         print 'Loading c++...'
@@ -67,14 +73,33 @@ def main (options,args) :
     outputname = getOutputName(options.out,put_in_run_directory=False)
     LoadRootCore()
 
-    myjob = ROOT.EL.Job()
-    myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
-    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_class)
-    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)
     if not options.alg :
-        print 'Error! You must specify an algorithm!'
+        print 'Error! You must specify an algorithm (using --alg)'
         sys.exit()
-    exec ('alg = ROOT.%s("%s")'%(options.alg,options.alg))
+
+    myjob = ROOT.EL.Job()
+    #myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_athena)
+    if options.alg in ['HGamCutflowAndMxAOD'] :
+        myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_class)
+    else :
+        myjob.options().setString (ROOT.EL.Job.optXaodAccessMode, ROOT.EL.Job.optXaodAccessMode_branch)
+
+    # voms_proxy = ROOT.EL.VomsProxySvc()
+    # if options.sge :
+    #     myjob.algsAdd(voms_proxy)
+
+    cmd = 'alg = ROOT.%s("%s")'%(options.alg,options.alg)
+    print cmd
+    exec (cmd)
+
+    # if options.alg == 'HGamCutflowAndMxAOD' :
+    #     ROOT.gROOT.LoadMacro('$ROOTCOREBIN/../brendlingerHiggsTestbed/share/CompiledCode.h')
+    #     alg = ROOT.getHGamCutflowAndMxAOD(options.alg)
+    # else :
+    #     print 'Error! Do not know about algorithm %s'%(options.alg)
+    #     sys.exit()
+    # print alg
+
     conf = ROOT.HG.Config()
     conf.addFile(options.config)
 
@@ -101,6 +126,10 @@ def main (options,args) :
     # files from argv command line
     # (could also do scanDir or whatever)
 
+    if not options.input :
+        print 'Error! No input (options.input) specified. Exiting.'
+        sys.exit();
+
     myhandler = ROOT.SH.SampleHandler()
 
     # local file
@@ -112,8 +141,8 @@ def main (options,args) :
     
     # Dataset stored on DESY-HH_LOCALGROUPDISK
     else :
-        if not os.getenv('ATLAS_LOCAL_DQ2CLIENT_PATH') :
-            print 'Error! Please execute localSetupDQ2Client and voms-proxy-init!'
+        if not os.getenv('RUCIO_HOME') :
+            print 'Error! Please execute localSetupRucioClients and voms-proxy-init!'
             sys.exit()
             
         ROOT.SH.scanRucio(myhandler,options.input)
@@ -121,23 +150,46 @@ def main (options,args) :
         # srm://srm.ndgf.org
         # root://ftp1.ndgf.org
         # srm://dcache-se-atlas.desy.de/pnfs/desy.de/atlas/dq2
+        # srm://dcache-se-atlas.desy.de:8443/srm/managerv2?SFN=/pnfs ...
         disk = 'DESY-HH_LOCALGROUPDISK'
-        ROOT.SH.makeGridDirect(myhandler,disk,'srm://dcache-se-atlas.desy.de','',False) 
+        # Need proxy???
+        # ROOT.SH.makeGridDirect(myhandler,disk,'srm://dcache-se-atlas.desy.de:8443/srm/managerv2?SFN=','root://dcache-atlas-xrootd.desy.de:1094/',False)
+        ROOT.SH.makeGridDirect(myhandler,disk,'srm://dcache-se-atlas.desy.de:8443/srm/managerv2?SFN=','',False)
         # last argument is for partial datasets
 
+    print 'scanning number of events'
     ROOT.SH.scanNEvents(myhandler)
-    myhandler.printContent()
+
+    for s in myhandler :
+        nentries = s.meta().castDouble(ROOT.SH.MetaFields.numEvents,-1)
+        job_info = ''
+        if options.sge :
+            job_info = ' (options.max=%d; %d jobs)'%(options.max,math.ceil(nentries/options.max))
+        print 'Sample %s has %d entries%s'%(s.name(),nentries,job_info)
+        for i in range(min(5,s.numFiles())) :
+            print '    %s'%(s.fileName(i))
+        if s.numFiles() > 5 :
+            print '    ...'
+            for i in range(max(5,s.numFiles()-3),s.numFiles()) :
+                print '    %s'%(s.fileName(i))
+
+    # myhandler.printContent()
     myhandler.setMetaString('nc_tree','CollectionTree') # must be done AFTER scanDir
     myjob.sampleHandler(myhandler)
     myhandler.setMetaDouble(ROOT.EL.Job.optEventsPerWorker,options.max)
 
     if options.sge :
         driver = ROOT.EL.GEDriver();
+        # Might be needed for XROOTD access in the future.
+        # driver.shellInit = "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase && source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh && eval lsetup root && eval lsetup xrootd --skipConfirm"
         myjob.options().setString(ROOT.EL.Job.optSubmitFlags, '-q default.q,short.q,long.q  -l os=sld6 -l site=hh -l h_vmem=4G')
     else :
         driver = ROOT.EL.DirectDriver()
-    
+
+    print 'submitting'
+    raw_input('press enter to submit')
     driver.submit(myjob,outputname)
+    print 'done'
 
     return 0
 
@@ -164,7 +216,6 @@ if __name__ == "__main__":
     p.add_option('--config' ,type  ='string',default='sr3l_soft.conf'           ,dest='config' ,help='config file' )
     p.add_option('--out'   ,type  ='string'    ,default='out'   ,dest='out',help='output name' )
     # p.add_option('--treename'  ,type  ='string',default='susy'  ,dest='treename',help='tree name' )
-    # p.add_option('--skim'  ,action='store_true',default=False  ,dest='skim',help='do a skim (d3pd)' )
     # p.add_option('--grid'  ,action='store_true',default=False  ,dest='grid',help='send to grid (d3pd)' )
     # p.add_option('--submit',action='store_true',default=False  ,dest='submit',help='Submit to grid (d3pd)' )
     # p.add_option('--ntuple',action='store_true',default=False  ,dest='ntuple',help='write an ntuple' )
@@ -173,8 +224,6 @@ if __name__ == "__main__":
     # p.add_option('--gridsamples',type ='string',default='GridSamples.txt',dest='gridsamples',help='Grid samples text file' )
     # p.add_option('--tag',type  ='string'    ,default='dc14_ew01'   ,dest='tag',help='dataset tag' )
     # p.add_option('--truth'  ,action='store_true',default=False  ,dest='truth',help='truth level analysis on truth DAODs' )
-    # p.add_option('--susy'  ,action='store_true',default=False  ,dest='susy',help='Use susy object selection (instead of WZ object selection)' )
-    # p.add_option('--susy2016'  ,action='store_true',default=False  ,dest='susy2016',help='Use susy2016 object selection (instead of WZ object selection)' )
     # p.add_option('--systematics'  ,action='store_true',default=False  ,dest='systematics',help='Run all systematic variations' )
 
     options,args = p.parse_args()
